@@ -4,18 +4,18 @@ global  N_slow N_theta N_time_step dt
 N_slow = 16;
 N_theta = 19;
 
-a= [1,-2,1];
-A = repmat(a,N_slow,1); %paramenters for the one-multiplication part 
-b= [-1,-1,0,0,1,1];
-B = repmat(b,N_slow,1); %paramenters for the two-multiplication part
-c=0.1*[5,3,0,-3,0,0,-10,-3,3,5];
-C = repmat(c,N_slow,1); %paramenters for the three-multiplication part
-s = ones(N_slow, 1);
-sigma = ones(N_slow, 1);
-para_true=[A,B,C,s,sigma]';
+% a= [1,-2,1];
+% A = repmat(a,N_slow,1); %paramenters for the one-multiplication part 
+% b= [-1,-1,0,0,1,1];
+% B = repmat(b,N_slow,1); %paramenters for the two-multiplication part
+% c=0.1*[5,3,0,-3,0,0,-10,-3,3,5];
+% C = repmat(c,N_slow,1); %paramenters for the three-multiplication part
+% s = ones(N_slow, 1);
+% sigma = ones(N_slow, 1);
+% para_true=[A,B,C,s,sigma]';
 %x= generating_data(para_true);
 
-
+x= FB_x;
 N_time_step = size(x,2);   % number of discretization
 dt = 0.05;     %step length for discretization
 
@@ -156,7 +156,7 @@ para_guess=zeros(N_theta+2, N_slow);
          end
 
       Y_t=[xx,two_variables(xx),three_variables(xx)];
-      Y_Y = Y_Y + Y_t* Y_t';
+      Y_Y = Y_Y + Y_t'* Y_t;
       Y_dx= Y_dx + (x(i,t+1)-x(i,t))*  Y_t';
 
     end
