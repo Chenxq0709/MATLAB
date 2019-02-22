@@ -153,14 +153,12 @@ H=zeros(N_theta+2, N_theta+2);  %hessian
      H(1:N_theta,N_theta+1)=  H(1:N_theta,N_theta+1) + m2* para(N_theta+1)* Y_t';
      H(1:N_theta,N_theta+2)=  H(1:N_theta,N_theta+2) + m2* para(N_theta+2)*x(i_th,t)^2 * Y_t';
          
-     H(N_theta+1,N_theta+1)=H(N_theta+1,N_theta+1) + p^2*(4* para(N_theta+1)^2 - q) / (q^3*dt) + (-2*para(N_theta+1)^2 + q) / (q^2);
-     %(4*p^2/(q^3*dt)-1/q^2)*2*para(N_theta+1)^2 + m1;
-     
+     H(N_theta+1,N_theta+1)=H(N_theta+1,N_theta+1) +  (4*p^2/(q^3*dt)-1/q^2)*2*para(N_theta+1)^2 + m1;
+     %p^2*(4* para(N_theta+1)^2 - q) / (q^3*dt) + (-2*para(N_theta+1)^2 + q) / (q^2)
      m3 =  (2*p^2) / (q^3*dt) - 1/q^2;                                              
      H(N_theta+1,N_theta+2)=H(N_theta+1,N_theta+2) + 2*para(N_theta+1)*para(N_theta+2)*x(i_th,t)^2* m3 ;
-     H(N_theta+2,N_theta+2)=H(N_theta+2,N_theta+2) + x(i_th,t)^2*p^2* (4*para(N_theta+2)^2*x(i_th,t)^2- q)/ (q^3*dt) + x(i_th,t)^2*(-2*para(N_theta+2)^2*x(i_th,t)^2 + q) / (q^2);
-     %m3*2*para(N_theta+2)^2*x(i_th,t)^4 + m1* x(i_th,t)^2;
-        
+     H(N_theta+2,N_theta+2)=H(N_theta+2,N_theta+2) + m3*2*para(N_theta+2)^2*x(i_th,t)^4 + m1* x(i_th,t)^2;
+     %x(i_th,t)^2*p^2* (4*para(N_theta+2)^2*x(i_th,t)^2- q)/ (q^3*dt) + x(i_th,t)^2*(-2*para(N_theta+2)^2*x(i_th,t)^2 + q) / (q^2);   
     end
      
      H(N_theta+1,1:N_theta)=H(1:N_theta,N_theta+1)';

@@ -3,13 +3,13 @@ L = 100;
 domain = 256;
 N_window = 16; 
 N_slow = fix(domain / N_window) ;
-Trend = 200;
+Trend = 100;
 dt = 0.01;     %step length for discretization
 store_freq = 5; % the storage dt =0.05
 store_time_star = 10;
 N_theta = 19;
 
-a= 0.3*[1;-2;1];
+a= 0.5*[1;-2;1];
 b= [-1;-1;0;0;1;1];
 c=0.1*[5;3;0;-3;0;0;-10;-3;3;5];
 s = 1;
@@ -66,7 +66,7 @@ x_count=0;
     x_cal(i,t+1) = x_cal(i,t+1) + para(20,i)*dw1 + para(21,i)*x_cal(i,t)*dw2 + 0.5*para(21,i)^2*x_cal(i,t)*(dw2^2-dt);
   end
   
-  if t*dt >=  store_time_star
+  if t*dt ==  store_time_star
       start_count= true;
   end
      
