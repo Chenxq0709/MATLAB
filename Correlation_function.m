@@ -18,5 +18,3 @@ lag_time= 20;
   end
 return
 end
-
-% Tiny is super cute!
