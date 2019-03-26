@@ -4,33 +4,23 @@ global  N_slow N_theta N_time_step dt
 N_slow = 16;
 N_theta = 19;
 
-% a= [1,-2,1];
-% A = repmat(a,N_slow,1); %paramenters for the one-multiplication part 
-% b= [-1,-1,0,0,1,1];
-% B = repmat(b,N_slow,1); %paramenters for the two-multiplication part
-% c=0.1*[5,3,0,-3,0,0,-10,-3,3,5];
-% C = repmat(c,N_slow,1); %paramenters for the three-multiplication part
-% s = ones(N_slow, 1);
-% sigma = ones(N_slow, 1);
-% para_true=[A,B,C,s,sigma]';
-%x= generating_data(para_true);
-
-x= x_test;
 N_time_step = size(x,2);   % number of discretization
 dt = 0.05;     %step length for discretization
+
 
 para_MLE=zeros(N_theta+2,N_slow);  %space for storage MLE of samples
 
 %%MLE for samples
 %for m=1:N_sample
 
-   para_guess=initial_guess(x);
+ para_guess=initial_guess(x);
+ %para_guess=dt*randn(N_theta+2,N_slow);
+ %para_guess= theta_true*0.9;
+ 
   for i= 1: N_slow
      initial = para_guess(:,i);
-     options = optimoptions('fminunc','Display','iter-detailed','Algorithm','trust-region','SpecifyObjectiveGradient',true,'HessianFcn','objective');
+     options = optimoptions('fminunc','Display','iter-detailed','Algorithm','trust-region','SpecifyObjectiveGradient',true,'HessianFcn','objective','MaxIter', 5000);
      [para_MLE(:,i),MLE] = fminunc(@negative_log_likelihood, initial ,options);
-
-%     sens_plot(x,theta_guess,theta_sample(:,m));
   end
 %% 
 function y=two_variables(input)
@@ -83,13 +73,12 @@ para_guess=zeros(N_theta+2, N_slow);
             xx = [x(i-1,t),x(i,t),x(i+1,t)];
          end
 
-      Y_t=[xx,two_variables(xx),three_variables(xx)];
-      Y_Y = Y_Y + Y_t'* Y_t;
-      Y_dx= Y_dx + (x(i,t+1)-x(i,t))*  Y_t';
+      Y_t=[xx,two_variables(xx),three_variables(xx)]';
+      Y_Y = Y_Y + Y_t* Y_t' *dt;
+      Y_dx= Y_dx + (x(i,t+1)-x(i,t))*  Y_t;
 
     end
 
-    Y_Y = Y_Y * dt;
     opts.SYM = true;
     para_guess(1:N_theta,i)= linsolve(Y_Y,Y_dx);
 
@@ -117,7 +106,7 @@ end
 %%
 
 function [f,G,H] = negative_log_likelihood(para)
-global L  N_window N_slow N_theta Trend N_time_step dt
+global  N_slow N_theta N_time_step dt
 %i_th slow varible
 i_th= evalin('base','i');
 x= evalin('base','x');
@@ -129,38 +118,35 @@ H=zeros(N_theta+2, N_theta+2);  %hessian
    for t= 1:N_time_step-1
         
      if i_th==1
-        xx = [x(N_slow,t),x(i_th,t),x(i_th+1,t)];
+        xx = [x(N_slow,t),x(i_th,t),x(i_th +1,t)];
      elseif i_th==N_slow
-        xx = [x(i_th-1,t),x(i_th,t),x(1,t)]; 
+        xx = [x(i_th -1,t),x(i_th,t),x(1,t)]; 
      else 
-        xx = [x(i_th-1,t),x(i_th,t),x(i_th+1,t)];
+        xx = [x(i_th -1,t),x(i_th,t),x(i_th +1,t)];
      end
 
-     Y_t=[xx,two_variables(xx),three_variables(xx)];
+     Y_t=[xx,two_variables(xx),three_variables(xx)]';
 
-     p = x(i_th,t+1)-x(i_th,t)- dot(para(1:N_theta), Y_t) *dt;
-     q = para(N_theta+1)^2 +para(N_theta+2)^2 *x(i_th,t)^2;
+     p = x(i_th,t+1) - x(i_th,t) -  para(1:N_theta)' *Y_t*dt;
+     q = para(N_theta+1)^2 + para(N_theta+2)^2 *x(i_th,t)^2;
         
-     f=f + p^2 /(2*q*dt) + 0.5*log(2*pi*q*dt);
+     f = f + p^2 /(2*q*dt) + 0.5*log(2*pi*q*dt);
      
-     G(1:N_theta)= G(1:N_theta) - Y_t'* (p/q) ;
+     G(1:N_theta)= G(1:N_theta) - (p/q)*Y_t ;
      m1 = (-p^2 / (q^2*dt) + 1/ q);
      G(N_theta+1)= G(N_theta+1)+ m1 * para(N_theta+1);
      G(N_theta+2)= G(N_theta+2)+ m1 * para(N_theta+2)*x(i_th,t)^2;
      
-     H(1:N_theta,1:N_theta)=  H(1:N_theta,1:N_theta) + Y_t'* Y_t .*(dt/q);
+     H(1:N_theta,1:N_theta)=  H(1:N_theta,1:N_theta) + Y_t* Y_t' *(dt/q);
      m2 = 2*p/(q^2);
-     H(1:N_theta,N_theta+1)=  H(1:N_theta,N_theta+1) + m2* para(N_theta+1)* Y_t';
-     H(1:N_theta,N_theta+2)=  H(1:N_theta,N_theta+2) + m2* para(N_theta+2)*x(i_th,t)^2 * Y_t';
-         
-     H(N_theta+1,N_theta+1)=H(N_theta+1,N_theta+1) + p^2*(4* para(N_theta+1)^2 - q) / (q^3*dt) + (-2*para(N_theta+1)^2 + q) / (q^2);
-     %(4*p^2/(q^3*dt)-1/q^2)*2*para(N_theta+1)^2 + m1;
+     H(1:N_theta,N_theta+1)=  H(1:N_theta,N_theta+1) + m2* para(N_theta+1)* Y_t;
+     H(1:N_theta,N_theta+2)=  H(1:N_theta,N_theta+2) + m2* para(N_theta+2)*x(i_th,t)^2 * Y_t;
      
-     m3 =  (2*p^2) / (q^3*dt) - 1/q^2;                                              
-     H(N_theta+1,N_theta+2)=H(N_theta+1,N_theta+2) + 2*para(N_theta+1)*para(N_theta+2)*x(i_th,t)^2* m3 ;
-     H(N_theta+2,N_theta+2)=H(N_theta+2,N_theta+2) + x(i_th,t)^2*p^2* (4*para(N_theta+2)^2*x(i_th,t)^2- q)/ (q^3*dt) + x(i_th,t)^2*(-2*para(N_theta+2)^2*x(i_th,t)^2 + q) / (q^2);
-     %m3*2*para(N_theta+2)^2*x(i_th,t)^4 + m1* x(i_th,t)^2;
-        
+     m3 =  (2*p^2) / (q^3*dt) - 1/q^2;   
+     H(N_theta+1,N_theta+1)=H(N_theta+1,N_theta+1) + m3*2*para(N_theta+1)^2 + m1;                                     
+     H(N_theta+1,N_theta+2)=H(N_theta+1,N_theta+2) + m3* 2*para(N_theta+1)*para(N_theta+2)*x(i_th,t)^2;
+     H(N_theta+2,N_theta+2)=H(N_theta+2,N_theta+2) + m3* 2*para(N_theta+2)^2*x(i_th,t)^4 + m1* x(i_th,t)^2;
+      
     end
      
      H(N_theta+1,1:N_theta)=H(1:N_theta,N_theta+1)';
